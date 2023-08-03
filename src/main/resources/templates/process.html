@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <style>
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      background-color: #3f51b5;
+      color: #fff;
+      padding: 20px;
+    }
+  #message-container {
+      background-color: #f1f1f1;
+      padding: 60px;
+      max-width: 800px;
+      width: 100%;
+      height: 400px;
+      margin: 0 auto;
+      overflow: auto;
+    }
+    .message {
+      font-size: 18px;
+      line-height: 1.5;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0px 0px 4px #ccc;
+      clear: both;
+    }
+    .message.sent {
+      background-color: #3f51b5;
+      color: #fff;
+      float: right;
+    }
+    .message.received {
+      background-color: #fff;
+      color: #333;
+      float: left;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 4px;
+      box-shadow: 0px 0px 4px #ccc;
+    }
+    input[type="submit"] {
+      background-color: #3f51b5;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+  <title>Real-Time ChatRoom</title>
+</head>
+<body>
+<h1>Real-Time ChatRoom</h1>
+<div style="display: flex; justify-content: center; align-items: center;">
+  <label for="name"><b>Name: </b></label>
+  <input type="text" name="name" id="name">
+</div>
+<br><br>
+<div name="count"></div>
+<div id="message-container">
+</div>
+<br><br>
+<div style="display: flex; justify-content: center; align-items: center;">
+  <label for="requestData"><b>Message: </b></label>
+  <input type="text" name="requestData" id="requestData">
+  <input type="submit" value="Send">
+</div>
+
+<script>
+
+function postMsg(msg){
+  fetch(`process?requestData=${msg}`, {
+    method: "POST"
+  });
+  document.querySelector('input[name=requestData]').value = '';
+}
+
+document.querySelector('input[type=submit]').addEventListener('click', ()=>{
+  let name = document.querySelector('input[name=name]').value;
+  const msg = document.querySelector('input[name=requestData]').value;
+/*  if (!name) {
+    name = 'Anonymous';
+  }*/
+  postMsg(msg);
+});
+
+document.querySelector('input[name=requestData]').addEventListener('keypress', (event) => {
+  if (event.key === 'Enter') {
+    let name = document.querySelector('input[name=name]').value;
+    const msg = document.querySelector('input[name=requestData]').value;
+ /*   if (!name) {
+      name = 'Anonymous';
+    }*/
+    postMsg(msg);
+  }
+});
+
+const eventSource = new EventSource('/sse');
+
+eventSource.onopen = (event) => {
+  console.log('Connection opened');
+};
+
+eventSource.onerror = (event) => {
+  console.error('EventSource error:', event);
+  console.error('Ready state:', event.target.readyState);
+  console.error('Status:', event.target.status);
+  console.error('Response:', event.target.responseText);
+};
+
+let count = 0
+
+eventSource.onmessage = (event) => {
+  const requestData = event.data;
+  const messageContainer = document.querySelector('#message-container');
+  const messageClass = requestData.startsWith('You: ') ? 'sent' : 'received';
+  const message = `<div class="message ${messageClass}">${requestData}</div>`;
+  messageContainer.innerHTML += message;
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+
+  document.querySelector('[name=count]').innerHTML = ''
+  document.querySelector('[name=count]').innerHTML = ++count
+};
+</script>
+</body>
+</html>
