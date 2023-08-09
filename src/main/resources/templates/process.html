@@ -74,11 +74,28 @@
 </div>
 
 <script>
+function postMsg(msg) {
+  const data = {
+    requestData: msg
+  };
 
-function postMsg(msg){
-  fetch(`process?requestData=${msg}`, {
-    method: "POST"
+  fetch('process', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Request failed with status ' + response.status);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
   });
+
   document.querySelector('input[name=requestData]').value = '';
 }
 
@@ -95,9 +112,6 @@ document.querySelector('input[name=requestData]').addEventListener('keypress', (
   if (event.key === 'Enter') {
     let name = document.querySelector('input[name=name]').value;
     const msg = document.querySelector('input[name=requestData]').value;
- /*   if (!name) {
-      name = 'Anonymous';
-    }*/
     postMsg(msg);
   }
 });

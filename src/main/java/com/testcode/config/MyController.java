@@ -24,16 +24,14 @@ public class MyController {
 
     private static final List<String> MESSAGE_CACHE = new ArrayList<>();
 
-    @RequestMapping(value = "/process", method = {RequestMethod.GET})
-    @CrossOrigin
+    @GetMapping("/process")
     public ModelAndView getRequest() {
         return new ModelAndView("process");
     }
 
-    @RequestMapping(value = "/process", method = {RequestMethod.POST})
-    public boolean postRequest(@RequestParam(value = "requestData", required = true) String requestData) {
-
-        kafkaTemplate.send("my-topic", requestData);
+    @PostMapping("/process")
+    public boolean postRequest(@RequestBody RequestData requestData) {
+        kafkaTemplate.send("my-topic", requestData.getRequestData());
         return true;
     }
 
@@ -98,5 +96,17 @@ public class MyController {
         }
 
         return result;
+    }
+
+    public static class RequestData {
+        private String requestData;
+
+        public String getRequestData() {
+            return requestData;
+        }
+
+        public void setRequestData(String requestData) {
+            this.requestData = requestData;
+        }
     }
 }
