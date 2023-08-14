@@ -30,7 +30,7 @@ public class KafkaController {
 
     @GetMapping("/chat")
     public ModelAndView getRequest() {
-        return new ModelAndView("process");
+        return new ModelAndView("chat");
     }
 
     @PostMapping("/chat")
