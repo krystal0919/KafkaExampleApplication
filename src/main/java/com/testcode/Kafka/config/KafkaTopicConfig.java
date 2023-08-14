@@ -1,4 +1,4 @@
-package com.testcode.config;
+package com.testcode.Kafka.config;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

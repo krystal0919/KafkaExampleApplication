@@ -1,7 +1,7 @@
-package com.testcode.config;
+package com.testcode.Kafka.config;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -15,52 +15,42 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 @RestController
-public class MyController {
+public class KafkaController {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    public MyController(KafkaTemplate<String, String> kafkaTemplate) {
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    public KafkaController(KafkaTemplate<String, String> kafkaTemplate, RedisTemplate<String, Object> redisTemplate) {
         this.kafkaTemplate = kafkaTemplate;
+        this.redisTemplate = redisTemplate;
     }
 
     private static final List<String> MESSAGE_CACHE = new ArrayList<>();
 
-    @GetMapping("/process")
+    @GetMapping("/chat")
     public ModelAndView getRequest() {
         return new ModelAndView("process");
     }
 
-    @PostMapping("/process")
+    @PostMapping("/chat")
     public boolean postRequest(@RequestBody RequestData requestData) {
-        kafkaTemplate.send("my-topic", requestData.getRequestData());
+        String message = requestData.getRequestData();
+        kafkaTemplate.send("my-topic", message);
         return true;
     }
+
 
     private static final List<SseEmitter> EMITTERS = new CopyOnWriteArrayList<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
    @GetMapping("/sse")
-   @CrossOrigin(origins = "http://localhost:80/process")
+   @CrossOrigin(origins = "http://localhost:80/chat")
    public SseEmitter sseEmitter() throws IOException {
        SseEmitter emitter = new SseEmitter(-1L); //never timeout
        EMITTERS.add(emitter);
        emitter.onCompletion(() -> EMITTERS.remove(emitter));
        emitter.onTimeout(() -> EMITTERS.remove(emitter));
-//       executorService.execute(() -> {
-//           try {
-//               while (true) {
-//                   if (consumer.message != null) {
-//                       for (SseEmitter sseEmitter : EMITTERS) {
-//                           sseEmitter.send(SseEmitter.event().data(consumer.message));
-//                       }
-//                   }
-//                   consumer.message = null;
-//                   Thread.sleep(50);
-//               }
-//           } catch (Exception e) {
-//               EMITTERS.remove(emitter);
-//               emitter.completeWithError(e);
-//           }
-//       });
        return emitter;
    }
 

@@ -1,4 +1,4 @@
-package com.testcode.config;
+package com.testcode.Kafka.config;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
