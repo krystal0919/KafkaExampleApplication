@@ -40,7 +40,7 @@ public class KafkaController {
         kafkaTemplate.send("my-topic", message);
 
         // Save message to Redis
-        //redisTemplate.opsForList().rightPush("messages", message);
+        redisTemplate.opsForList().rightPush("messages", message);
 
         return true;
     }
@@ -66,7 +66,7 @@ public class KafkaController {
         System.out.println(count);
 
         // Save message to Redis
-        //redisTemplate.opsForList().rightPush("messages", message);
+        redisTemplate.opsForList().rightPush("messages", message);
 
         for (SseEmitter sseEmitter : EMITTERS) {
             try {
