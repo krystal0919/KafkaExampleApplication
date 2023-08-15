@@ -11,6 +11,7 @@ Users can send integers through text box and receive the result of calculation i
 
 
 ### Environment Setup (for Windows):
+Exit the environment: ***ctrl+c***
 1. *Kafka*  
 Installation and Quickstart link to [Kafka](https://kafka.apache.org/quickstart)  
 Open **TWO** terminals to start the ZooKeeper service & Kafka broker service respectively  
@@ -20,8 +21,11 @@ Topic would be created after starting the ExampleApplication<br />
 ****To connect to Kafka from a different machine, replace the [localhost]:9092 with the [IPv4] address of that machine in application.properties*** <br /><br />
 
 2. *Redis*  
+Installation and Quickstart link to [Redis](https://redis.io/docs/getting-started/installation/install-redis-on-windows/)  
+Open **Ubuntu** and running 'sudo service redis-server start' & 'redis-cli' commands.  
+****Need to input password after starting the server***<br />  
 
-
+*For first installation, need to set up username and password (password unseen)*
 
 ### Technologies Used:
 - Java (Spring Boot)

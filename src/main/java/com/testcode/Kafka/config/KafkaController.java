@@ -14,19 +14,18 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 @RestController
 public class KafkaController {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    public KafkaController(KafkaTemplate<String, String> kafkaTemplate, RedisTemplate<String, Object> redisTemplate) {
+    public KafkaController(KafkaTemplate<String, String> kafkaTemplate, RedisTemplate<String, String> redisTemplate) {
         this.kafkaTemplate = kafkaTemplate;
         this.redisTemplate = redisTemplate;
     }
-
-    private static final List<String> MESSAGE_CACHE = new ArrayList<>();
 
     @GetMapping("/chat")
     public ModelAndView getRequest() {
@@ -36,23 +35,28 @@ public class KafkaController {
     @PostMapping("/chat")
     public boolean postRequest(@RequestBody RequestData requestData) {
         String message = requestData.getRequestData();
+
+        // Publish message to Kafka
         kafkaTemplate.send("my-topic", message);
+
+        // Save message to Redis
+        //redisTemplate.opsForList().rightPush("messages", message);
+
         return true;
     }
-
 
     private static final List<SseEmitter> EMITTERS = new CopyOnWriteArrayList<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-   @GetMapping("/sse")
-   @CrossOrigin(origins = "http://localhost:80/chat")
-   public SseEmitter sseEmitter() throws IOException {
-       SseEmitter emitter = new SseEmitter(-1L); //never timeout
-       EMITTERS.add(emitter);
-       emitter.onCompletion(() -> EMITTERS.remove(emitter));
-       emitter.onTimeout(() -> EMITTERS.remove(emitter));
-       return emitter;
-   }
+    @GetMapping("/sse")
+    @CrossOrigin(origins = "http://localhost:80/chat")
+    public SseEmitter sseEmitter() {
+        SseEmitter emitter = new SseEmitter(-1L); // never timeout
+        EMITTERS.add(emitter);
+        emitter.onCompletion(() -> EMITTERS.remove(emitter));
+        emitter.onTimeout(() -> EMITTERS.remove(emitter));
+        return emitter;
+    }
 
     int count = 0;
 
@@ -60,6 +64,10 @@ public class KafkaController {
     public void consume(String message) {
         count++;
         System.out.println(count);
+
+        // Save message to Redis
+        //redisTemplate.opsForList().rightPush("messages", message);
+
         for (SseEmitter sseEmitter : EMITTERS) {
             try {
                 int num = Integer.parseInt(message);
