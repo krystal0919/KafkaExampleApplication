@@ -39,9 +39,6 @@ public class KafkaController {
         // Publish message to Kafka
         kafkaTemplate.send("my-topic", message);
 
-        // Save message to Redis
-        redisTemplate.opsForList().rightPush("messages", message);
-
         return true;
     }
 

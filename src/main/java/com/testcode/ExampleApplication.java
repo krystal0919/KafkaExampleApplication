@@ -24,12 +24,12 @@ public class ExampleApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) {
-		String message = "Hello, Redis!";
-		redisTemplate.delete("messages"); // Clear the "messages" list
+		String message = "Connect to Redis!";
+		redisTemplate.delete("messages"); // Clear the "messages" list each time
 		redisTemplate.opsForList().rightPush("messages", message);
 
 		List<String> messages = redisTemplate.opsForList().range("messages", 0, -1);
-		System.out.println("Messages in Redis:");
+		//System.out.println("Messages in Redis:");
 		for (String msg : messages) {
 			System.out.println(msg);
 		}
