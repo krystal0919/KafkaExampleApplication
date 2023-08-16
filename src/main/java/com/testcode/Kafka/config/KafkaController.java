@@ -86,7 +86,7 @@ public class KafkaController implements ConsumerSeekAware {
         String topic = message.topic();
         int partition = message.partition();
         long offset = message.offset();
-        redisController.storeOffset(topic, partition, offset);
+        redisController.storeMessage(topic, partition, offset, message.value());
     }
 
     public int complicatedComputation(int n) {

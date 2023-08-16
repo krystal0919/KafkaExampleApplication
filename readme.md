@@ -33,19 +33,20 @@ Open **Ubuntu** and running 'sudo service redis-server start' & 'redis-cli' comm
 *For first installation, need to set up username and password (password unseen)*
 
 ### Usage:
-Step 1: Start the Kafka and Redis (please refer to [Environment Setup](#foo))
+Step 1: Start the Kafka and Redis (please refer to [Environment Setup](#environment-setup-for-windows))
 
-Step 2: Start the application
-1. Run the application via ExampleApplication.java in Intellij  
-2. Maven: Clean and package --> Run KafkaExampleApplication-0.0.1-SNAPSHOT.jar in Command Prompt
+Step 2: Start the application   
+a. Run the application via ExampleApplication.java in Intellij  
+b. Maven: Clean and package --> Run KafkaExampleApplication-0.0.1-SNAPSHOT.jar in Command Prompt
 
 ****For remote access, replace the [localhost]:80/chat with the [IPv4] address of machine run the application***   
 
 Step 3: Start chat / Send message  
-1. Open a browser and type url: localhost:80/chat.   
-- Send message through the below text box and click send or press 'enter'
-![img_2.png](img_2.png)
-2. Open **POSTMAN** and use method *POST* (url = localhost:80/chat) 
+a. Open a browser and type url: localhost:80/chat.   
+- Send message through the below text box and click send or press 'enter' 
+![img_2.png](img_2.png)    
+
+b. Open **POSTMAN** and use method *POST* (url = localhost:80/chat) 
 - Select Body --> raw --> JSON and send message  
 ![img_3.png](img_3.png)
 - If sent successfully, received ***'true'***  
@@ -53,5 +54,5 @@ Step 3: Start chat / Send message
 
 >****For Redis:***
 > The RedisController class provides methods to store and retrieve message offsets in Redis
-> - Checking Stored Message: Use the Redis CLI and run the GET command **'GET kafka:offsets:my-topic:0'**
+> - Checking Stored Message: Use the Redis CLI and run the GET command ~~'GET kafka:offsets:my-topic:0'~~ **HGETALL kafka:offsets**
 > - If the key exists and the offset has been stored, Redis will return the offset value. If the key does not exist or the offset is not stored, Redis will return a nil response.

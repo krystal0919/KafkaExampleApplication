@@ -1,47 +1,44 @@
 package com.testcode.Redis;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Component
 public class RedisController {
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final HashOperations<String, String, String> hashOperations;
     private static final String OFFSETS_KEY = "kafka:offsets";
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisController.class);
 
     @Autowired
     public RedisController(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
+        this.hashOperations = redisTemplate.opsForHash();
     }
 
-    // Store the offset in Redis
-    public void storeOffset(String topic, int partition, long offset) {
-        try {
-            String key = getOffsetKey(topic, partition);
-            redisTemplate.opsForValue().set(key, String.valueOf(offset));
-        } catch (Exception e) {
-            LOGGER.error("Error storing offset in Redis: ", e);
-        }
+    // Store the message details in Redis
+    public void storeMessage(String topic, int partition, long offset, String message) {
+        String key = getMessageKey(topic, partition, offset);
+        hashOperations.put(OFFSETS_KEY, key, message);
     }
 
-    // Retrieve the stored offset from Redis
-    public long retrieveStoredOffset(String topic, int partition) {
-        try {
-            String key = getOffsetKey(topic, partition);
-            String offset = redisTemplate.opsForValue().get(key);
-            return offset != null ? Long.parseLong(offset) : -1;
-        } catch (Exception e) {
-            LOGGER.error("Error retrieving offset from Redis: ", e);
-            return -1;
-        }
+    // Retrieve all stored messages from Redis
+    public Map<String, String> retrieveAllMessages() {
+        return hashOperations.entries(OFFSETS_KEY);
     }
 
-    // Get the Redis key for storing the offset
-    private String getOffsetKey(String topic, int partition) {
-        return OFFSETS_KEY + ":" + topic + ":" + partition;
+    // Retrieve the stored message by topic, partition, and offset from Redis
+    public String retrieveMessage(String topic, int partition, long offset) {
+        String key = getMessageKey(topic, partition, offset);
+        return hashOperations.get(OFFSETS_KEY, key);
+    }
+
+    // Get the Redis key for storing the message
+    private String getMessageKey(String topic, int partition, long offset) {
+        return topic + ":" + partition + ":" + offset;
     }
 }
