@@ -29,9 +29,9 @@ public class ExampleApplication implements CommandLineRunner {
 		redisTemplate.opsForList().rightPush("messages", message);
 
 		List<String> messages = redisTemplate.opsForList().range("messages", 0, -1);
-		//System.out.println("Messages in Redis:");
-		for (String msg : messages) {
-			System.out.println(msg);
-		}
+		System.out.println("Connect to Redis!");
+		//for (String msg : messages) {
+			//System.out.println(msg);
+		//}
 	}
 }

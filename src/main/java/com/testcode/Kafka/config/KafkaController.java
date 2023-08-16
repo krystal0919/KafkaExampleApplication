@@ -1,30 +1,40 @@
 package com.testcode.Kafka.config;
 
+import com.testcode.Redis.RedisController;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.ConsumerSeekAware;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
-public class KafkaController {
+public class KafkaController implements ConsumerSeekAware {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final KafkaListenerEndpointRegistry endpointRegistry;
+    private Consumer<?, ?> assignedConsumer;
+    private static final List<SseEmitter> EMITTERS = new CopyOnWriteArrayList<>();
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    @Autowired
+    private RedisController redisController;
 
     @Autowired
-    public KafkaController(KafkaTemplate<String, String> kafkaTemplate, RedisTemplate<String, String> redisTemplate) {
+    public KafkaController(KafkaTemplate<String, String> kafkaTemplate, KafkaListenerEndpointRegistry endpointRegistry) {
         this.kafkaTemplate = kafkaTemplate;
-        this.redisTemplate = redisTemplate;
+        this.endpointRegistry = endpointRegistry;
     }
 
     @GetMapping("/chat")
@@ -35,15 +45,11 @@ public class KafkaController {
     @PostMapping("/chat")
     public boolean postRequest(@RequestBody RequestData requestData) {
         String message = requestData.getRequestData();
-
         // Publish message to Kafka
         kafkaTemplate.send("my-topic", message);
 
         return true;
     }
-
-    private static final List<SseEmitter> EMITTERS = new CopyOnWriteArrayList<>();
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @GetMapping("/sse")
     @CrossOrigin(origins = "http://localhost:80/chat")
@@ -58,23 +64,29 @@ public class KafkaController {
     int count = 0;
 
     @KafkaListener(topics = "my-topic")
-    public void consume(String message) {
+    public void consume(ConsumerRecord<String, String> message) throws IOException {
         count++;
-        System.out.println(count);
-
-        // Save message to Redis
-        redisTemplate.opsForList().rightPush("messages", message);
+        //System.out.println(count);
 
         for (SseEmitter sseEmitter : EMITTERS) {
             try {
-                int num = Integer.parseInt(message);
+                int num = Integer.parseInt(message.value());
                 int complexAnswer = complicatedComputation(num);
                 sseEmitter.send(SseEmitter.event().data(complexAnswer));
+            } catch (NumberFormatException e) {
+                // Handle non-integer values gracefully
+                sseEmitter.send(SseEmitter.event().data("Invalid value: " + message.value()));
             } catch (Exception e) {
                 EMITTERS.remove(sseEmitter);
                 sseEmitter.completeWithError(e);
             }
         }
+
+        // Store the offset in Redis
+        String topic = message.topic();
+        int partition = message.partition();
+        long offset = message.offset();
+        redisController.storeOffset(topic, partition, offset);
     }
 
     public int complicatedComputation(int n) {
