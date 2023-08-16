@@ -53,6 +53,6 @@ b. Open **POSTMAN** and use method *POST* (url = localhost:80/chat)
 <br />
 
 >****For Redis:***
-> The RedisController class provides methods to store and retrieve message offsets in Redis
-> - Checking Stored Message: Use the Redis CLI and run the GET command ~~'GET kafka:offsets:my-topic:0'~~ **HGETALL kafka:offsets**
+> The RedisController class provides methods to store and retrieve message (offsets) in Redis
+> - Checking Stored Message: Use the Redis CLI and run the ~~GET command 'GET kafka:offsets:my-topic:0'~~  **HGETALL kafka:offsets**
 > - If the key exists and the offset has been stored, Redis will return the offset value. If the key does not exist or the offset is not stored, Redis will return a nil response.

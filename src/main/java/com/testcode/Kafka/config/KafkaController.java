@@ -9,6 +9,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerSeekAware;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -30,6 +31,8 @@ public class KafkaController implements ConsumerSeekAware {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     @Autowired
     private RedisController redisController;
+    @Autowired
+    private Consumer<?, ?> kafkaConsumer;
 
     @Autowired
     public KafkaController(KafkaTemplate<String, String> kafkaTemplate, KafkaListenerEndpointRegistry endpointRegistry) {
@@ -64,7 +67,7 @@ public class KafkaController implements ConsumerSeekAware {
     int count = 0;
 
     @KafkaListener(topics = "my-topic")
-    public void consume(ConsumerRecord<String, String> message) throws IOException {
+    public void consume(ConsumerRecord<String, String> message, Acknowledgment acknowledgment) throws IOException {
         count++;
         //System.out.println(count);
 
@@ -87,6 +90,12 @@ public class KafkaController implements ConsumerSeekAware {
         int partition = message.partition();
         long offset = message.offset();
         redisController.storeMessage(topic, partition, offset, message.value());
+
+        System.out.println("Received message: ");
+        System.out.println(message.value().toString());
+
+        // Manually commit the offset
+        acknowledgment.acknowledge();
     }
 
     public int complicatedComputation(int n) {
@@ -115,5 +124,22 @@ public class KafkaController implements ConsumerSeekAware {
         public void setRequestData(String requestData) {
             this.requestData = requestData;
         }
+    }
+
+    @Override
+    public void registerSeekCallback(ConsumerSeekCallback callback) {
+        // Save the ConsumerSeekCallback for later use
+    }
+
+    @Override
+    public void onPartitionsAssigned(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
+        // Save the assigned Consumer object for later use
+        assignedConsumer = kafkaConsumer;
+        assignedConsumer.assign(assignments.keySet());
+    }
+
+    @Override
+    public void onIdleContainer(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
+        // Perform any necessary actions when the consumer is idle
     }
 }
